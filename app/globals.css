@@ -47,3 +47,6 @@ button { cursor: pointer; font-family: inherit; }
 .linked-item:hover {
   border-color: var(--border2) !important;
 }
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
