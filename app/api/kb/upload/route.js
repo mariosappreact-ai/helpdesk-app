@@ -17,24 +17,23 @@ export async function POST(request) {
       );
     }
 
-    // Generate embedding via OpenAI
+    // Gemini embedding (free tier)
     const embeddingResponse = await fetch(
-      "https://api.openai.com/v1/embeddings",
+      `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${process.env.GEMINI_API_KEY}`,
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "text-embedding-3-small",
-          input: `${title}\n\n${content}`,
+          model: "models/text-embedding-004",
+          content: {
+            parts: [{ text: `${title}\n\n${content}` }],
+          },
         }),
       },
     );
 
     const embeddingData = await embeddingResponse.json();
-    const embedding = embeddingData.data?.[0]?.embedding;
+    const embedding = embeddingData.embedding?.values;
 
     if (!embedding) {
       return NextResponse.json(
