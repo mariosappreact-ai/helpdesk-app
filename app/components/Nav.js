@@ -18,7 +18,12 @@ export default function Nav({ profile }) {
   const links = [
     { href: "/dashboard", label: "Dashboard" },
     { href: "/tickets", label: "Tickets" },
-    ...(profile?.role === "agent" ? [{ href: "/tasks", label: "Tasks" }] : []),
+    ...(profile?.role === "agent"
+      ? [
+          { href: "/tasks", label: "Tasks" },
+          { href: "/kb", label: "Knowledge Base" },
+        ]
+      : []),
   ];
 
   return (
