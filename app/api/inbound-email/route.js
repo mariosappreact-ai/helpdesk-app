@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-// Uses service role — bypasses RLS safely on server
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY,
@@ -19,7 +18,7 @@ export async function POST(request) {
       );
     }
 
-    // ── Step 1: Find or create the user profile ──────────────────
+    // ── Step 1: Find or create user profile ──────────────────────
     let { data: profile } = await supabase
       .from("profiles")
       .select("id")
@@ -27,7 +26,6 @@ export async function POST(request) {
       .single();
 
     if (!profile) {
-      // Create an auth user first
       const { data: authUser, error: authError } =
         await supabase.auth.admin.createUser({
           email: sender_email,
@@ -42,8 +40,6 @@ export async function POST(request) {
         return NextResponse.json({ error: authError.message }, { status: 500 });
       }
 
-      // Profile is created by the trigger automatically
-      // but we need to wait a moment and fetch it
       await new Promise((r) => setTimeout(r, 500));
 
       const { data: newProfile } = await supabase
@@ -66,7 +62,7 @@ export async function POST(request) {
     const { data: ticket, error: ticketError } = await supabase
       .from("tickets")
       .insert({
-        subject: subject.slice(0, 200), // cap subject length
+        subject: subject.slice(0, 200),
         status: "open",
         priority: "medium",
         created_by: profile.id,
@@ -78,7 +74,19 @@ export async function POST(request) {
       return NextResponse.json({ error: ticketError.message }, { status: 500 });
     }
 
-    // ── Step 3: Add email body as first comment ───────────────────
+    // ── Step 3: Create linked task automatically ──────────────────
+    const { data: task } = await supabase
+      .from("tasks")
+      .insert({
+        ticket_id: ticket.id,
+        title: subject.slice(0, 200),
+        status: "open",
+        assigned_to: null,
+      })
+      .select()
+      .single();
+
+    // ── Step 4: Add email body as first comment on ticket ─────────
     await supabase.from("comments").insert({
       ticket_id: ticket.id,
       author_id: profile.id,
@@ -89,8 +97,9 @@ export async function POST(request) {
     return NextResponse.json({
       success: true,
       ticket_id: ticket.id,
+      task_id: task?.id,
       user_id: profile.id,
-      message: `Ticket #${ticket.id} created for ${sender_email}`,
+      message: `Ticket #${ticket.id} and Task #${task?.id} created for ${sender_email}`,
     });
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
