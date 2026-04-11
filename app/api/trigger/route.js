@@ -5,7 +5,7 @@ export async function POST(request) {
     const body = await request.json();
 
     const n8nResponse = await fetch(
-      "https://demotickets.app.n8n.cloud/webhook/helpdesk-ai-task",
+      "https://demotickets.app.n8n.cloud/webhook/helpdesk-app",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
